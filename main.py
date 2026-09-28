@@ -237,9 +237,42 @@ Rules:
 """
 
 
+async def pick_models(client):
+    """Ask Google which Flash models are available right now."""
+    try:
+        r = await client.get(
+            "https://generativelanguage.googleapis.com/v1beta/models",
+            headers={"x-goog-api-key": GEMINI_API_KEY},
+            params={"pageSize": 200},
+        )
+    except Exception as e:
+        logging.warning("Model list failed: %s", e)
+        return [], "model list: connection problem"
+    if r.status_code != 200:
+        logging.warning("Model list status %s: %s", r.status_code, r.text[:300])
+        return [], f"model list: HTTP {r.status_code}"
+    bad = ("image", "tts", "audio", "live", "embedding", "robotics", "computer", "customtools", "exp", "learnlm")
+    names = []
+    for m in r.json().get("models", []):
+        name = m.get("name", "").replace("models/", "")
+        methods = m.get("supportedGenerationMethods", [])
+        if "generateContent" in methods and "flash" in name and not any(b in name for b in bad):
+            names.append(name)
+    names.sort(reverse=True)
+    names.sort(key=lambda n: "preview" in n)
+    return names[:4], ""
+
+
 async def ask_gemini(prompt):
-    models = [m for m in [GEMINI_MODEL, "gemini-2.5-flash", "gemini-2.5-flash-lite"] if m]
+    last_error = "unknown"
     async with httpx.AsyncClient(timeout=120) as client:
+        discovered, list_error = await pick_models(client)
+        if list_error:
+            last_error = list_error
+        models = []
+        for m in [GEMINI_MODEL] + discovered + ["gemini-2.5-flash", "gemini-2.5-flash-lite"]:
+            if m and m not in models:
+                models.append(m)
         for model in models:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
             for _ in range(2):
@@ -254,22 +287,31 @@ async def ask_gemini(prompt):
                     )
                 except Exception as e:
                     logging.warning("Gemini request failed: %s", e)
+                    last_error = f"{model}: connection problem"
                     break
                 if r.status_code == 200:
                     try:
                         parts = r.json()["candidates"][0]["content"]["parts"]
                         text = "".join(p.get("text", "") for p in parts).strip()
                         if text:
-                            return text
+                            return text, ""
+                        last_error = f"{model}: empty answer"
                     except Exception as e:
                         logging.warning("Gemini parse failed: %s", e)
+                        last_error = f"{model}: unreadable answer"
                     break
+                status = ""
+                try:
+                    status = r.json().get("error", {}).get("status", "")
+                except Exception:
+                    pass
+                last_error = f"{model}: HTTP {r.status_code} {status}".strip()
                 logging.warning("Gemini %s status %s: %s", model, r.status_code, r.text[:300])
                 if r.status_code in (429, 500, 503):
                     await asyncio.sleep(6)
                     continue
                 break
-    return None
+    return None, last_error
 
 
 async def send_long(update: Update, text: str):
@@ -289,9 +331,9 @@ async def get_workout(update: Update, context: ContextTypes.DEFAULT_TYPE):
     can_workout = (update.message.text or "").strip() == YES[lang]
     await update.message.reply_text(T[lang]["wait"], reply_markup=ReplyKeyboardRemove())
 
-    answer = await ask_gemini(build_prompt(context.user_data, lang, can_workout))
+    answer, error_info = await ask_gemini(build_prompt(context.user_data, lang, can_workout))
     if not answer:
-        await update.message.reply_text(T[lang]["error"])
+        await update.message.reply_text(T[lang]["error"] + "\n\n(info: " + error_info + ")")
         return ConversationHandler.END
 
     await send_long(update, answer)
