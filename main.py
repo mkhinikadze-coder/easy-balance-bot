@@ -276,56 +276,73 @@ async def pick_models(client):
     # stable models first, then previews; full Flash before Flash-Lite
     names.sort(key=lambda n: ("preview" in n, "lite" in n))
     logging.info("Available Flash models: %s", names)
-    return names[:8], ""
+    return names[:5], ""
 
 
 async def ask_gemini(prompt):
-    errors = []
+    errors = {}
+    dead = set()  # models that do not exist or are not allowed (no point retrying)
     async with httpx.AsyncClient(timeout=60) as client:
         discovered, list_error = await pick_models(client)
         if list_error:
-            errors.append(list_error)
+            errors["list"] = list_error
         models = []
         for m in [GEMINI_MODEL] + discovered + ["gemini-2.5-flash", "gemini-2.5-flash-lite"]:
             if m and m not in models:
                 models.append(m)
-        for model in models:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-            try:
-                r = await client.post(
-                    url,
-                    headers={"x-goog-api-key": GEMINI_API_KEY},
-                    json={
-                        "contents": [{"parts": [{"text": prompt}]}],
-                        "generationConfig": {"temperature": 0.7},
-                    },
-                )
-            except Exception as e:
-                logging.warning("Gemini %s request failed: %r", model, e)
-                errors.append(f"{model}: {type(e).__name__}")
-                continue
-            if r.status_code == 200:
+        for round_no in range(4):
+            busy = False
+            for model in models:
+                if model in dead:
+                    continue
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
                 try:
-                    parts = r.json()["candidates"][0]["content"]["parts"]
-                    text = "".join(p.get("text", "") for p in parts).strip()
-                    if text:
-                        logging.info("Answer created with model %s", model)
-                        return text, ""
-                    errors.append(f"{model}: empty answer")
+                    r = await client.post(
+                        url,
+                        headers={"x-goog-api-key": GEMINI_API_KEY},
+                        json={
+                            "contents": [{"parts": [{"text": prompt}]}],
+                            "generationConfig": {"temperature": 0.7},
+                        },
+                    )
                 except Exception as e:
-                    logging.warning("Gemini %s parse failed: %r", model, e)
-                    errors.append(f"{model}: unreadable answer")
-                continue
-            status = ""
-            try:
-                status = r.json().get("error", {}).get("status", "")
-            except Exception:
-                pass
-            errors.append(f"{model}: HTTP {r.status_code} {status}".strip())
-            logging.warning("Gemini %s status %s: %s", model, r.status_code, r.text[:300])
-            if r.status_code in (400, 401, 403) and "API key" in r.text:
-                break  # the key itself is wrong, other models will not help
-    return None, " | ".join(errors)[:600]
+                    logging.warning("Gemini %s request failed: %r", model, e)
+                    errors[model] = type(e).__name__
+                    busy = True
+                    continue
+                if r.status_code == 200:
+                    try:
+                        parts = r.json()["candidates"][0]["content"]["parts"]
+                        text = "".join(p.get("text", "") for p in parts).strip()
+                        if text:
+                            logging.info("Answer created with model %s", model)
+                            return text, ""
+                        errors[model] = "empty answer"
+                    except Exception as e:
+                        logging.warning("Gemini %s parse failed: %r", model, e)
+                        errors[model] = "unreadable answer"
+                    busy = True
+                    continue
+                status = ""
+                try:
+                    status = r.json().get("error", {}).get("status", "")
+                except Exception:
+                    pass
+                errors[model] = f"HTTP {r.status_code} {status}".strip()
+                logging.warning("Gemini %s status %s: %s", model, r.status_code, r.text[:300])
+                if r.status_code in (400, 401, 403) and "API key" in r.text:
+                    return None, "API key problem: " + errors[model]
+                if r.status_code in (404, 403):
+                    dead.add(model)
+                else:
+                    busy = True  # 429 / 500 / 503: Google is busy, try again later
+            if not busy or round_no == 3:
+                break
+            wait = 15 * (round_no + 1)
+            logging.info("All models busy, waiting %s seconds (round %s)", wait, round_no + 1)
+            await asyncio.sleep(wait)
+    summary = " | ".join(f"{k}: {v}" for k, v in errors.items())
+    return None, summary[:600]
 
 
 async def send_long(update: Update, text: str):
