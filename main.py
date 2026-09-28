@@ -18,6 +18,10 @@ from telegram.ext import (
 )
 
 logging.basicConfig(level=logging.INFO)
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
 
 TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
 GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
@@ -237,6 +241,13 @@ Rules:
 """
 
 
+def model_rank(name):
+    m = re.match(r"^gemini-(\d+(?:\.\d+)?)-flash(-lite)?$", name)
+    if m:
+        return (0, -float(m.group(1)), 1 if m.group(2) else 0, name)
+    return (1, 0, 0, name)
+
+
 async def pick_models(client):
     """Ask Google which Flash models are available right now."""
     try:
@@ -246,12 +257,15 @@ async def pick_models(client):
             params={"pageSize": 200},
         )
     except Exception as e:
-        logging.warning("Model list failed: %s", e)
+        logging.warning("Model list failed: %r", e)
         return [], "model list: connection problem"
     if r.status_code != 200:
         logging.warning("Model list status %s: %s", r.status_code, r.text[:300])
         return [], f"model list: HTTP {r.status_code}"
-    bad = ("image", "tts", "audio", "live", "embedding", "robotics", "computer", "customtools", "exp", "learnlm")
+    bad = (
+        "image", "tts", "audio", "live", "embedding", "robotics", "computer",
+        "customtools", "exp", "learnlm", "omni", "veo", "imagen", "native", "thinking",
+    )
     names = []
     for m in r.json().get("models", []):
         name = m.get("name", "").replace("models/", "")
@@ -259,59 +273,59 @@ async def pick_models(client):
         if "generateContent" in methods and "flash" in name and not any(b in name for b in bad):
             names.append(name)
     names.sort(reverse=True)
-    names.sort(key=lambda n: "preview" in n)
-    return names[:4], ""
+    # stable models first, then previews; full Flash before Flash-Lite
+    names.sort(key=lambda n: ("preview" in n, "lite" in n))
+    logging.info("Available Flash models: %s", names)
+    return names[:8], ""
 
 
 async def ask_gemini(prompt):
-    last_error = "unknown"
-    async with httpx.AsyncClient(timeout=120) as client:
+    errors = []
+    async with httpx.AsyncClient(timeout=60) as client:
         discovered, list_error = await pick_models(client)
         if list_error:
-            last_error = list_error
+            errors.append(list_error)
         models = []
         for m in [GEMINI_MODEL] + discovered + ["gemini-2.5-flash", "gemini-2.5-flash-lite"]:
             if m and m not in models:
                 models.append(m)
         for model in models:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-            for _ in range(2):
+            try:
+                r = await client.post(
+                    url,
+                    headers={"x-goog-api-key": GEMINI_API_KEY},
+                    json={
+                        "contents": [{"parts": [{"text": prompt}]}],
+                        "generationConfig": {"temperature": 0.7},
+                    },
+                )
+            except Exception as e:
+                logging.warning("Gemini %s request failed: %r", model, e)
+                errors.append(f"{model}: {type(e).__name__}")
+                continue
+            if r.status_code == 200:
                 try:
-                    r = await client.post(
-                        url,
-                        headers={"x-goog-api-key": GEMINI_API_KEY},
-                        json={
-                            "contents": [{"parts": [{"text": prompt}]}],
-                            "generationConfig": {"temperature": 0.7},
-                        },
-                    )
+                    parts = r.json()["candidates"][0]["content"]["parts"]
+                    text = "".join(p.get("text", "") for p in parts).strip()
+                    if text:
+                        logging.info("Answer created with model %s", model)
+                        return text, ""
+                    errors.append(f"{model}: empty answer")
                 except Exception as e:
-                    logging.warning("Gemini request failed: %s", e)
-                    last_error = f"{model}: connection problem"
-                    break
-                if r.status_code == 200:
-                    try:
-                        parts = r.json()["candidates"][0]["content"]["parts"]
-                        text = "".join(p.get("text", "") for p in parts).strip()
-                        if text:
-                            return text, ""
-                        last_error = f"{model}: empty answer"
-                    except Exception as e:
-                        logging.warning("Gemini parse failed: %s", e)
-                        last_error = f"{model}: unreadable answer"
-                    break
-                status = ""
-                try:
-                    status = r.json().get("error", {}).get("status", "")
-                except Exception:
-                    pass
-                last_error = f"{model}: HTTP {r.status_code} {status}".strip()
-                logging.warning("Gemini %s status %s: %s", model, r.status_code, r.text[:300])
-                if r.status_code in (429, 500, 503):
-                    await asyncio.sleep(6)
-                    continue
-                break
-    return None, last_error
+                    logging.warning("Gemini %s parse failed: %r", model, e)
+                    errors.append(f"{model}: unreadable answer")
+                continue
+            status = ""
+            try:
+                status = r.json().get("error", {}).get("status", "")
+            except Exception:
+                pass
+            errors.append(f"{model}: HTTP {r.status_code} {status}".strip())
+            logging.warning("Gemini %s status %s: %s", model, r.status_code, r.text[:300])
+            if r.status_code in (400, 401, 403) and "API key" in r.text:
+                break  # the key itself is wrong, other models will not help
+    return None, " | ".join(errors)[:600]
 
 
 async def send_long(update: Update, text: str):
