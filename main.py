@@ -37,14 +37,14 @@ YES = {"ka": "დიახ", "ru": "Да", "en": "Yes"}
 NO = {"ka": "არა", "ru": "Нет", "en": "No"}
 
 PATH_BUTTONS = {
-    "ka": {"🍽 მშვიდი კალორია": "calm", "⏳ კვების ფანჯარა": "window"},
-    "ru": {"🍽 Спокойные калории": "calm", "⏳ Окно питания": "window"},
-    "en": {"🍽 Calm Calories": "calm", "⏳ Eating Window": "window"},
+    "ka": {"🍽 მშვიდი კალორია": "calm", "⏳ მსუბუქი დეფიციტი": "window"},
+    "ru": {"🍽 Спокойные калории": "calm", "⏳ Лёгкий дефицит": "window"},
+    "en": {"🍽 Calm Calories": "calm", "⏳ Light Deficit": "window"},
 }
 
 T = {
     "ka": {
-        "choose_path": "ორი გზა გაქვს არჩევანში — ორივე მიდის იმავე მიზნისკენ, სხვადასხვა გზით:\n\n🍽 მშვიდი კალორია — კვების რაოდენობის მსუბუქი, მინიმალურად დამძაბავი კორექტირება.\n⏳ კვების ფანჯარა — კვების საათების თანდათანობითი, ნელი დავიწროება, რაოდენობის შეზღუდვის გარეშე.\n\nრომელი გინდა?",
+        "choose_path": "ორი გზა გაქვს არჩევანში — ორივე მიდის იმავე მიზნისკენ, სხვადასხვა გზით:\n\n🍽 მშვიდი კალორია — კვების რაოდენობის მსუბუქი, მინიმალურად დამძაბავი კორექტირება.\n⏳ მსუბუქი დეფიციტი — კვების საათების თანდათანობითი, ნელი დავიწროება 18-საათიან ინტერვალურ კვებამდე, რაოდენობის შეზღუდვის გარეშე.\n\nრომელი გინდა?",
         "ed_screen": "სანამ გავაგრძელებთ — გქონია თუ არა ოდესმე სერიოზული ბრძოლა კვების დარღვევებთან (მაგალითად ანორექსია, ბულიმია), ან ხარ თუ არა ამჟამად ამის მკურნალობის პროცესში?",
         "ed_screen_yes_note": "მადლობა გულწრფელობისთვის. ეს ნამდვილად მნიშვნელოვანია — კარგი იქნება, თუ ამ გზაზე სპეციალისტთან ერთად იაროთ, განსაკუთრებით კვების საათებთან დაკავშირებულ ნაწილში. მე მაინც შემიძლია დაგეხმარო მსუბუქი, ზრუნვაზე დაფუძნებული მიმართულებით, თუ გსურს გავაგრძელოთ.",
         "weight": "რამდენ კილოგრამს იწონი დღეს? (მაგალითად: 82)",
@@ -67,7 +67,7 @@ T = {
         "help": "დახმარებისთვის ან ნებისმიერი კითხვისთვის მომწერე: https://t.me/{owner}\n\nახალი ანალიზის დასაწყებად: /start",
     },
     "ru": {
-        "choose_path": "У тебя есть два пути — оба ведут к одной цели, разными способами:\n\n🍽 Спокойные калории — мягкая, минимально напряжная корректировка количества еды.\n⏳ Окно питания — постепенное сужение часов питания, без ограничения количества.\n\nКакой выбираешь?",
+        "choose_path": "У тебя есть два пути — оба ведут к одной цели, разными способами:\n\n🍽 Спокойные калории — мягкая, минимально напряжная корректировка количества еды.\n⏳ Лёгкий дефицит — постепенное сужение часов питания до 18-часового интервального питания, без ограничения количества.\n\nКакой выбираешь?",
         "ed_screen": "Прежде чем продолжить — был ли у тебя когда-нибудь серьёзный опыт расстройства пищевого поведения (например, анорексия, булимия), или проходишь ли ты сейчас лечение от этого?",
         "ed_screen_yes_note": "Спасибо за честность. Это действительно важно — будет хорошо, если этот путь ты будешь проходить вместе со специалистом, особенно в части, связанной с часами питания. Я всё равно могу помочь мягким, заботливым направлением, если хочешь продолжить.",
         "weight": "Сколько килограммов ты весишь сегодня? (например: 82)",
@@ -90,7 +90,7 @@ T = {
         "help": "Для помощи или любого вопроса пиши: https://t.me/{owner}\n\nЧтобы начать новый анализ: /start",
     },
     "en": {
-        "choose_path": "You have two paths — both lead to the same goal, in different ways:\n\n🍽 Calm Calories — a gentle, low-stress adjustment of how much you eat.\n⏳ Eating Window — a slow, gradual narrowing of your eating hours, with no limit on quantity.\n\nWhich one do you want?",
+        "choose_path": "You have two paths — both lead to the same goal, in different ways:\n\n🍽 Calm Calories — a gentle, low-stress adjustment of how much you eat.\n⏳ Light Deficit — a slow, gradual narrowing of your eating hours toward 18-hour intermittent eating, with no limit on quantity.\n\nWhich one do you want?",
         "ed_screen": "Before we continue — have you ever seriously struggled with an eating disorder (for example anorexia, bulimia), or are you currently being treated for one?",
         "ed_screen_yes_note": "Thank you for your honesty. That really matters — it would be good to go through this path together with a specialist, especially the eating-hours part. I can still help with a gentle, caring direction if you'd like to continue.",
         "weight": "How many kilograms do you weigh today? (for example: 82)",
@@ -246,6 +246,9 @@ async def get_emotion(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def get_now(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lang = lang_of(context)
     context.user_data["now"] = (update.message.text or "")[:2000]
+    if context.user_data.get("path") == "window":
+        context.user_data["fridge"] = ""
+        return await run_analysis(update, context, can_workout=True)
     await update.message.reply_text(T[lang]["fridge"])
     return FRIDGE
 
@@ -253,8 +256,6 @@ async def get_now(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def get_fridge(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lang = lang_of(context)
     context.user_data["fridge"] = (update.message.text or "")[:2000]
-    if context.user_data.get("path") == "window":
-        return await run_analysis(update, context, can_workout=True)
     keyboard = ReplyKeyboardMarkup([[YES[lang], NO[lang]]], resize_keyboard=True, one_time_keyboard=True)
     await update.message.reply_text(T[lang]["workout"], reply_markup=keyboard)
     return WORKOUT
@@ -302,27 +303,23 @@ def build_prompt(d, lang, can_workout, path):
     schedule = PATH1_SCHEDULE if path == "calm" else PATH2_SCHEDULE
 
     voice_rules = """
-Voice and tone rules (follow these without ever naming any book, author, technique, or
+Voice and tone rules (plain, concrete, brief — never name any book, author, technique, or
 religion anywhere in the output):
-- Use identity-based language: frame actions around who the person is becoming ("you're
-  someone who takes care of themselves") rather than bare instructions ("you should eat
-  less"). Tie small daily actions to this identity.
-- Whenever discussing a possible missed day (meditation, exercise, the eating schedule, the
-  menu), explicitly reassure that missing one day changes nothing; the only real rule is not
-  missing two days in a row (and not missing more than 2 days total in a month). Never use a
-  blaming or disappointed tone about a slip; always frame it as "continue from tomorrow."
-- Avoid shallow positivity or empty cheerleading ("you can do it!", "stay positive!"). Instead,
-  ground motivation in the person's own stated reasons and values from their answers below —
-  gently reflect back why this matters to them long-term, using their own words/situation where
-  possible, rather than generic encouragement.
-- For meditation, describe it as non-judgmental observation and acceptance of whatever is
-  present (sensations, thoughts, breath) rather than as an achievement or performance to get
-  right. Keep it simple, a few sentences, never use the word "meditation technique names" or
-  any tradition's name.
-- Include one small, explicitly optional extra: ending a shower with 15-20 seconds of cold
-  water, framed as a light, optional challenge, never as a requirement.
-- End the weekly menu section with a short, gentle line connecting emotion and food: suggest
-  5 minutes of breathing or a short walk before deciding whether to eat, when feeling bad.
+- Keep all guidance simple, short and balanced. No abstract or preachy language, no repeated
+  slogans, no filler encouragement. Say things directly and concretely.
+- For habits (meditation, exercise, the eating schedule): the only real rule is never missing
+  two days in a row, and no more than 2 missed days in a month. State this plainly whenever
+  relevant. A missed day is not a failure, just continue the next day — say this once, briefly,
+  not repeatedly.
+- For the meditation/emotional part, convey one simple idea in a sentence or two: the urge to
+  eat is often really the mind or an emotion asking to be noticed, not actual hunger. Meditation
+  here just means noticing that feeling for a minute (or whatever the stage's duration is)
+  without judging it, then deciding separately whether to eat.
+- Include one small optional extra: a brief contrast shower (alternating a few seconds of hot
+  and cold water) at the end of a regular shower, framed as an optional light practice, never
+  required.
+- End the weekly menu section with one short line: if feeling bad, pause for a few minutes of
+  breathing or a short walk before deciding whether to eat.
 """
 
     ed_note = ""
@@ -352,7 +349,7 @@ User data:
 - Past lifestyle (stress, routine, work, emotions): {d['past']}
 - What they turn to when feeling bad emotionally: {d['emotion']}
 - Life today: {d['now']}
-- Fridge, available foods and food budget: {d['fridge']}
+{"- Fridge, available foods and food budget: " + d['fridge'] if d.get('fridge') else ""}
 - Can do a 3 minute daily workout: {'yes' if can_workout else 'no'}
 
 Your task: do a professional but simple analysis and create a balanced, low-stress 90-day plan
@@ -362,11 +359,13 @@ future check-in, so focus this output on the first 90 days).
 Rules:
 1. Weight loss must be healthy and low-stress. Use the recommended loss above as the yearly
    goal (not all of it needs to happen in 90 days), and explain in one or two sentences, in the
-   identity-based voice above, why this pace is a good, safe goal. If the user's wish is bigger
+   voice described above, why this pace is a good, safe goal. If the user's wish is bigger
    than that, gently say so. Never recommend a BMI below 20. If already at a healthy BMI, focus
    on healthy habits rather than further loss.
-2. Base everything on the user's real possibilities: foods they have, their budget, their
-   schedule and emotional situation. Use cheap, local, easy-to-find foods and simple cooking.
+2. Base everything on the user's real possibilities: their schedule and emotional situation,
+   and (when fridge/budget info is given above) their foods and budget. Use cheap, local,
+   easy-to-find foods and simple cooking; if no fridge/budget info was given, keep suggestions
+   generically affordable rather than asking the person anything further.
 3. If the path is Calm Calories, give a rough daily calorie range and a simple plate rule.
    If the path is Eating Window, explain the eating-hours concept simply (no calorie counting
    needed) and make clear food choice stays flexible within the eating window.
@@ -381,8 +380,12 @@ Rules:
    fitting the budget, (f) 3-5 tips for stress/emotional eating based specifically on what this
    person wrote about their past and their emotional trigger, (g) a short note that there will be
    a check-in around day 90 to see how it went and adjust, (h) what to do in common situations
-   (eating out, guests, holidays, no time to cook, low-budget days), (i) the optional cold-shower
-   line.
+   (eating out, guests, holidays, no time to cook, low-budget days), (i) the optional contrast-
+   shower line, (j) one short closing sentence previewing the longer arc: starting around month
+   3 sugar gradually decreases, and the last 3 months (month 9-12) the aim is cutting sugary
+   items specifically (juice, soda, cake, ice cream and similar — not ingredient-level sugar
+   like ketchup, mayo or butter), without going into detail now since that is covered at the
+   month-3 and month-9 check-ins.
    Stage schedule to adapt into the required voice: {schedule}
 6. Do NOT use markdown symbols such as *, #, or backticks. Use plain text, emojis, short lines
    and line breaks.
